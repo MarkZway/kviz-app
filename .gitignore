@@ -1,0 +1,14 @@
+﻿# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Maven
+target/
+
+# Node
+node_modules/
+dist/
+
+# Env
+.env
