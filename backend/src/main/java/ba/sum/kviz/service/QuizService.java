@@ -122,7 +122,7 @@ public class QuizService {
         return quiz;
     }
 
-    private void requireDraft(Quiz quiz) {
+    void requireDraft(Quiz quiz) {
         if (quiz.getStatus() != QuizStatus.DRAFT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Kviz se može mijenjati samo dok je u statusu DRAFT");
