@@ -5,6 +5,8 @@ import ba.sum.kviz.model.*;
 import ba.sum.kviz.repository.ParticipationRepository;
 import ba.sum.kviz.repository.QuizRepository;
 import ba.sum.kviz.repository.UserRepository;
+import ba.sum.kviz.service.scoring.ScoringResult;
+import ba.sum.kviz.service.scoring.ScoringService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -15,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class PlayService {
     private final ParticipationRepository participationRepository;
     private final QuizRepository quizRepository;
     private final UserRepository userRepository;
+    private final ScoringService scoringService;
 
     // =========================================================
     // POKRETANJE
@@ -156,21 +158,25 @@ public class PlayService {
 
         boolean quizTimeExpired = isQuizTimeExpired(participation);
 
-        boolean correct = !expired && !quizTimeExpired && evaluate(question, request);
-        int points = correct ? question.getBasePoints() : 0;
+        ScoringResult result = scoringService.score(
+                question,
+                request.selectedOptionId(),
+                request.textAnswer(),
+                timeTakenMs,
+                expired || quizTimeExpired);
 
         SubmittedAnswer answer = new SubmittedAnswer();
         answer.setParticipation(participation);
         answer.setQuestion(question);
         answer.setSelectedOption(resolveOption(question, request.selectedOptionId()));
         answer.setTextAnswer(request.textAnswer());
-        answer.setCorrect(correct);
+        answer.setCorrect(result.correct());
         answer.setTimeTakenMs(timeTakenMs);
-        answer.setPointsAwarded(points);
+        answer.setPointsAwarded(result.pointsAwarded());
         answer.setAnsweredAt(LocalDateTime.now());
 
         participation.getAnswers().add(answer);
-        participation.setTotalScore(participation.getTotalScore() + points);
+        participation.setTotalScore(participation.getTotalScore() + result.pointsAwarded());
 
         // pomak naprijed - povratak više nije moguć
         participation.setCurrentQuestionIndex(index + 1);
@@ -185,7 +191,7 @@ public class PlayService {
         }
 
         return new AnswerResultResponse(
-                correct, expired || quizTimeExpired, points,
+                result.correct(), result.expired(), result.pointsAwarded(),
                 participation.getTotalScore(), timeTakenMs, finished
         );
     }
@@ -211,30 +217,6 @@ public class PlayService {
                 getOwnedParticipation(participationId, userId));
     }
 
-    // =========================================================
-    // VREDNOVANJE (privremeno - modul 6 ovo seli u ScoringService)
-    // =========================================================
-
-    private boolean evaluate(Question question, SubmitAnswerRequest request) {
-        return switch (question.getType()) {
-            case MULTIPLE_CHOICE, TRUE_FALSE -> {
-                if (request.selectedOptionId() == null) yield false;
-                yield question.getOptions().stream()
-                        .filter(AnswerOption::isCorrect)
-                        .anyMatch(o -> o.getId().equals(request.selectedOptionId()));
-            }
-            case OPEN -> {
-                if (request.textAnswer() == null || request.textAnswer().isBlank()) yield false;
-                String given = normalize(request.textAnswer());
-                yield question.getAcceptableAnswers().stream()
-                        .anyMatch(a -> normalize(a.getText()).equals(given));
-            }
-        };
-    }
-
-    private String normalize(String text) {
-        return text.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
-    }
 
     private AnswerOption resolveOption(Question question, Long optionId) {
         if (optionId == null) return null;
