@@ -22,8 +22,15 @@ spring:
 
 server:
   port: 8080
+  error:
+    include-message: always
+
 
 app:
   jwt:
     secret: ${JWT_SECRET:7wm9Eqf/mSZ0L5UE7NmuMT6D32pfwY7WiULtg0EVcx74R5/VwYfICzpLoKuvpVZt}
     expiration-ms: 3600000   # 1 sat
+
+logging:
+  level:
+    org.springframework.security: DEBUG
