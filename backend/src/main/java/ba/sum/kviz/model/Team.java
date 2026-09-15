@@ -37,4 +37,7 @@ public class Team {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "join_code", nullable = false, unique = true, length = 8)
+    private String joinCode;
 }

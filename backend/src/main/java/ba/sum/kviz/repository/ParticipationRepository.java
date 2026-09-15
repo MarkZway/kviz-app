@@ -47,4 +47,23 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
             """)
     Double averageScore(@Param("quizId") Long quizId,
                         @Param("status") ParticipationStatus status);
+
+    boolean existsByQuizIdAndTeamId(Long quizId, Long teamId);
+
+    @Query("""
+            SELECT COUNT(p) > 0 FROM Participation p
+            WHERE p.quiz.id = :quizId
+              AND p.team IN (SELECT t FROM Team t JOIN t.members m WHERE m.id = :userId)
+            """)
+    boolean existsTeamParticipationForMember(@Param("quizId") Long quizId,
+                                             @Param("userId") Long userId);
+
+    @Query("""
+            SELECT p FROM Participation p
+            LEFT JOIN FETCH p.quiz
+            WHERE p.user.id = :userId
+               OR p.team IN (SELECT t FROM Team t JOIN t.members m WHERE m.id = :userId)
+            ORDER BY p.startedAt DESC
+            """)
+    List<Participation> findAllForUser(@Param("userId") Long userId);
 }

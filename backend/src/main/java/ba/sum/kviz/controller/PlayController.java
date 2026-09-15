@@ -50,4 +50,12 @@ public class PlayController {
             @AuthenticationPrincipal UserPrincipal principal) {
         return playService.getSummary(participationId, principal.getId());
     }
+
+    @PostMapping("/api/quizzes/{quizId}/play-as-team/{teamId}")
+    public PlayQuestionResponse startAsTeam(
+            @PathVariable Long quizId,
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return playService.startAsTeam(quizId, teamId, principal.getId());
+    }
 }

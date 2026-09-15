@@ -26,9 +26,7 @@ public class ResultService {
     private final SubmittedAnswerRepository submittedAnswerRepository;
     private final QuizService quizService;
 
-    // =========================================================
     // RANG-LISTA
-    // =========================================================
 
     @Transactional(readOnly = true)
     public List<LeaderboardEntry> leaderboard(Long quizId) {
@@ -70,9 +68,7 @@ public class ResultService {
         return entries;
     }
 
-    // =========================================================
     // STATISTIKA KVIZA (samo organizator)
-    // =========================================================
 
     @Transactional(readOnly = true)
     public QuizStatsResponse quizStats(Long quizId, Long userId) {
@@ -134,9 +130,7 @@ public class ResultService {
         );
     }
 
-    // =========================================================
     // PREGLED VLASTITOG POKUŠAJA
-    // =========================================================
 
     @Transactional(readOnly = true)
     public ParticipationDetailResponse myResult(Long participationId, Long userId) {
@@ -146,9 +140,12 @@ public class ResultService {
 
         boolean isOwner = participation.getUser() != null
                 && participation.getUser().getId().equals(userId);
+        boolean isTeamMember = participation.getTeam() != null
+                && participation.getTeam().getMembers().stream()
+                .anyMatch(m -> m.getId().equals(userId));
         boolean isQuizCreator = participation.getQuiz().getCreator().getId().equals(userId);
 
-        if (!isOwner && !isQuizCreator) {
+        if (!isOwner && !isTeamMember && !isQuizCreator) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pokušaj nije pronađen");
         }
 
@@ -217,20 +214,16 @@ public class ResultService {
                 .orElse("-");
     }
 
-    // =========================================================
     // MOJI POKUŠAJI
-    // =========================================================
 
     @Transactional(readOnly = true)
     public List<ParticipationSummaryResponse> myParticipations(Long userId) {
-        return participationRepository.findByUserIdOrderByStartedAtDesc(userId).stream()
+        return participationRepository.findAllForUser(userId).stream()
                 .map(ParticipationSummaryResponse::from)
                 .toList();
     }
 
-    // =========================================================
     // POMOĆNE METODE
-    // =========================================================
 
     private String participantName(Participation p) {
         if (p.getTeam() != null) {

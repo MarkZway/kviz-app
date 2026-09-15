@@ -4,6 +4,7 @@ import ba.sum.kviz.dto.*;
 import ba.sum.kviz.model.*;
 import ba.sum.kviz.repository.ParticipationRepository;
 import ba.sum.kviz.repository.QuizRepository;
+import ba.sum.kviz.repository.TeamRepository;
 import ba.sum.kviz.repository.UserRepository;
 import ba.sum.kviz.service.scoring.ScoringResult;
 import ba.sum.kviz.service.scoring.ScoringService;
@@ -29,10 +30,10 @@ public class PlayService {
     private final QuizRepository quizRepository;
     private final UserRepository userRepository;
     private final ScoringService scoringService;
+    private final TeamRepository teamRepository;
+    private final TeamService teamService;
 
-    // =========================================================
     // POKRETANJE
-    // =========================================================
 
     @Transactional
     public PlayQuestionResponse start(Long quizId, Long userId) {
@@ -49,6 +50,9 @@ public class PlayService {
         // MEHANIZAM 1: jedan pokušaj po korisniku
         if (participationRepository.existsByQuizIdAndUserId(quizId, userId)) {
             throw conflict("Ovaj kviz ste već rješavali. Dopušten je samo jedan pokušaj.");
+        }
+        if (participationRepository.existsTeamParticipationForMember(quizId, userId)) {
+            throw conflict("Vaš tim je već rješavao ovaj kviz.");
         }
 
         User user = userRepository.findById(userId)
@@ -73,9 +77,7 @@ public class PlayService {
         return serveCurrentQuestion(participation);
     }
 
-    // =========================================================
     // DOHVAT TRENUTNOG PITANJA
-    // =========================================================
 
     @Transactional
     public PlayQuestionResponse getCurrent(Long participationId, Long userId) {
@@ -85,10 +87,7 @@ public class PlayService {
         return serveCurrentQuestion(participation);
     }
 
-    /**
-     * Vraća pitanje na trenutnom indeksu i, ako je to prvi dohvat,
-     * bilježi serverski trenutak od kojeg teče vrijeme.
-     */
+
     private PlayQuestionResponse serveCurrentQuestion(Participation participation) {
         List<Question> questions = participation.getQuiz().getQuestions();
         int index = participation.getCurrentQuestionIndex();
@@ -118,9 +117,8 @@ public class PlayService {
         );
     }
 
-    // =========================================================
+
     // PREDAJA ODGOVORA
-    // =========================================================
 
     @Transactional
     public AnswerResultResponse submitAnswer(Long participationId,
@@ -196,9 +194,8 @@ public class PlayService {
         );
     }
 
-    // =========================================================
+
     // ODUSTAJANJE I PREGLED
-    // =========================================================
 
     @Transactional
     public ParticipationSummaryResponse abandon(Long participationId, Long userId) {
@@ -226,9 +223,53 @@ public class PlayService {
                 .orElseThrow(() -> badRequest("Odabrana opcija ne pripada ovom pitanju"));
     }
 
-    // =========================================================
+    @Transactional
+    public PlayQuestionResponse startAsTeam(Long quizId, Long teamId, Long userId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> notFound("Kviz nije pronađen"));
+
+        if (quiz.getStatus() != QuizStatus.PUBLISHED) {
+            throw conflict("Kviz trenutno nije otvoren za rješavanje");
+        }
+        if (quiz.getQuestions().isEmpty()) {
+            throw conflict("Kviz nema pitanja");
+        }
+
+        Team team = teamService.getTeamOrThrow(teamId);
+
+        if (!teamService.isMember(team, userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Niste član ovog tima");
+        }
+
+        // MEHANIZAM 1: jedan pokušaj po timu
+        if (participationRepository.existsByQuizIdAndTeamId(quizId, teamId)) {
+            throw conflict("Vaš tim je već rješavao ovaj kviz.");
+        }
+        // sudjelovanje je ili pojedinačno ili timsko, ne oboje
+        if (participationRepository.existsByQuizIdAndUserId(quizId, userId)) {
+            throw conflict("Ovaj kviz ste već rješavali pojedinačno.");
+        }
+
+        Participation participation = new Participation();
+        participation.setQuiz(quiz);
+        participation.setTeam(team);
+        participation.setStatus(ParticipationStatus.IN_PROGRESS);
+        participation.setCurrentQuestionIndex(0);
+        participation.setCurrentQuestionStartedAt(null);
+        participation.setTotalScore(0);
+        participation.setStartedAt(LocalDateTime.now());
+
+        try {
+            participationRepository.saveAndFlush(participation);
+        } catch (DataIntegrityViolationException e) {
+            throw conflict("Vaš tim je već rješavao ovaj kviz.");
+        }
+
+        return serveCurrentQuestion(participation);
+    }
+
     // POMOĆNE METODE
-    // =========================================================
 
     private Participation getOwnedParticipation(Long participationId, Long userId) {
         Participation participation = participationRepository.findById(participationId)
@@ -237,7 +278,10 @@ public class PlayService {
         boolean isOwner = participation.getUser() != null
                 && participation.getUser().getId().equals(userId);
 
-        if (!isOwner) {
+        boolean isTeamMember = participation.getTeam() != null
+                && teamService.isMember(participation.getTeam(), userId);
+
+        if (!isOwner && !isTeamMember) {
             throw notFound("Pokušaj nije pronađen");
         }
         return participation;
@@ -280,4 +324,6 @@ public class PlayService {
     private ResponseStatusException badRequest(String msg) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, msg);
     }
+
+
 }
