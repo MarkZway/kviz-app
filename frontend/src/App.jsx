@@ -6,6 +6,9 @@ import Navbar from "./components/Navbar";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import QuizListPage from "./pages/QuizListPage";
+import MyQuizzesPage from "./pages/MyQuizzesPage";
+import QuizEditorPage from "./pages/QuizEditorPage";
+import QuizStatsPage from "./pages/QuizStatsPage";
 
 function App() {
   return (
@@ -22,6 +25,33 @@ function App() {
               element={
                 <ProtectedRoute>
                   <QuizListPage />
+                </ProtectedRoute>
+              }
+            />
+
+                        <Route
+              path="/my-quizzes"
+              element={
+                <ProtectedRoute organizerOnly>
+                  <MyQuizzesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/quizzes/:quizId/edit"
+              element={
+                <ProtectedRoute organizerOnly>
+                  <QuizEditorPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/quizzes/:quizId/stats"
+              element={
+                <ProtectedRoute organizerOnly>
+                  <QuizStatsPage />
                 </ProtectedRoute>
               }
             />
