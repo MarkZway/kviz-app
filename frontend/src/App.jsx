@@ -9,6 +9,11 @@ import QuizListPage from "./pages/QuizListPage";
 import MyQuizzesPage from "./pages/MyQuizzesPage";
 import QuizEditorPage from "./pages/QuizEditorPage";
 import QuizStatsPage from "./pages/QuizStatsPage";
+import PlayPage from "./pages/PlayPage";
+import ResultPage from "./pages/ResultPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import MyResultsPage from "./pages/MyResultsPage";
+import TeamsPage from "./pages/TeamsPage";
 
 function App() {
   return (
@@ -52,6 +57,51 @@ function App() {
               element={
                 <ProtectedRoute organizerOnly>
                   <QuizStatsPage />
+                </ProtectedRoute>
+              }
+            />
+
+                        <Route
+              path="/play/:quizId"
+              element={
+                <ProtectedRoute>
+                  <PlayPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/participations/:participationId/result"
+              element={
+                <ProtectedRoute>
+                  <ResultPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/quizzes/:quizId/leaderboard"
+              element={
+                <ProtectedRoute>
+                  <LeaderboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/my-results"
+              element={
+                <ProtectedRoute>
+                  <MyResultsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/teams"
+              element={
+                <ProtectedRoute>
+                  <TeamsPage />
                 </ProtectedRoute>
               }
             />
