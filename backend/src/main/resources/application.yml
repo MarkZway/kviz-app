@@ -28,9 +28,17 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:7wm9Eqf/mSZ0L5UE7NmuMT6D32pfwY7WiULtg0EVcx74R5/VwYfICzpLoKuvpVZt}
-    expiration-ms: 3600000   # 1 sat
+    secret: ${JWT_SECRET:lokalni-razvojni-kljuc-nije-za-produkciju-32plus}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
 
 logging:
   level:
     org.springframework.security: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs

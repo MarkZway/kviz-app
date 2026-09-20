@@ -11,12 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/quizzes")
 @RequiredArgsConstructor
+@Tag(name = "Pitanja", description = "Upravljanje pitanjima unutar kviza")
 public class QuizController {
 
     private final QuizService quizService;

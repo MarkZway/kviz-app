@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/quizzes/{quizId}/questions")
 @PreAuthorize("hasRole('ORGANIZER')")
 @RequiredArgsConstructor
+@Tag(name = "Kvizovi", description = "Kreiranje, uređivanje i objava kvizova")
 public class QuestionController {
 
     private final QuestionService questionService;

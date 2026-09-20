@@ -7,11 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Timovi", description = "Kreiranje timova i upravljanje članstvom")
 public class ResultController {
 
     private final ResultService resultService;
