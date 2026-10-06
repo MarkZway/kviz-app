@@ -250,6 +250,10 @@ public class PlayService {
         if (participationRepository.existsByQuizIdAndUserId(quizId, userId)) {
             throw conflict("Ovaj kviz ste već rješavali pojedinačno.");
         }
+        // sudjelovanje nije moguce unutar vise timova
+        if (participationRepository.existsTeamParticipationForMember(quizId, userId)) {
+            throw conflict("Ovaj kviz ste već rješavali u sastavu drugog tima.");
+        }
 
         Participation participation = new Participation();
         participation.setQuiz(quiz);
